@@ -1,0 +1,14 @@
+services:
+  postgres_db:
+    image: postgres:latest
+    container_name: tinyURL_postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_db:/var/lib/postgresql/data
+
+volumes:
+  postgres_db:
