@@ -1,103 +1,162 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import toast, { Toaster } from "react-hot-toast";
+import { useState } from "react";
+
+const formSchema = z.object({
+  originalUrl: z.string().min(1, "URL is required").url("Must be a valid URL"),
+  expire_at: z.string().optional(),
+});
+
+type FormData = z.infer<typeof formSchema>;
+
+export default function HomePage() {
+  const [shortUrl, setShortUrl] = useState("");
+  const [longUrl, setLongUrl] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+  });
+
+  const onSubmit = async (data: FormData) => {
+    try {
+      const response = await fetch("http://localhost:8000/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          originalUrl: data.originalUrl,
+          expire_at: data.expire_at || undefined,
+        }),
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        setShortUrl(result.url);
+        setLongUrl(data.originalUrl);
+        setSubmitted(true);
+        toast.success("Short URL created!");
+      } else {
+        toast.error(result.error || "Failed to shorten URL");
+      }
+    } catch (error) {
+      toast.error("Network error");
+      console.error(error);
+    }
+  };
+
+  const handleReset = () => {
+    reset();
+    setShortUrl("");
+    setLongUrl("");
+    setSubmitted(false);
+  };
+
+  const handleCopy = () => {
+    try {
+      navigator.clipboard.writeText(shortUrl);
+      toast.success("Copied to clipboard!");
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      toast.error("Failed to copy to clipboard");
+    }
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <main className="flex flex-col items-center justify-center min-h-screen p-4">
+      <Toaster position="top-right" />
+      <h1 className="text-3xl font-bold mb-6">URL Shortener</h1>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="flex flex-col gap-4 w-full max-w-md"
+      >
+        {!submitted ? (
+          <>
+            <label className="text-md">Original URL</label>
+            <input
+              type="text"
+              placeholder="Enter original URL"
+              {...register("originalUrl")}
+              className="border px-4 py-2 rounded"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+            {errors.originalUrl && (
+              <p className="text-red-500 text-sm">
+                {errors.originalUrl.message}
+              </p>
+            )}
+
+            <label className="text-md">Expiry Date (Optional)</label>
+            <input
+              type="datetime-local"
+              {...register("expire_at")}
+              className="border px-4 py-2 rounded"
+            />
+            {errors.expire_at && (
+              <p className="text-red-500 text-sm">{errors.expire_at.message}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 disabled:opacity-50"
+            >
+              {isSubmitting ? "Creating..." : "Shorten URL"}
+            </button>
+          </>
+        ) : (
+          <>
+            <label className="text-md">Original URL</label>
+            <input
+              type="text"
+              value={longUrl}
+              readOnly
+              className="border px-4 py-2 rounded"
+            />
+
+            <label className="text-md">Shortened URL</label>
+            <input
+              type="text"
+              value={shortUrl}
+              readOnly
+              className="border px-4 py-2 rounded"
+            />
+            <div className="flex justify-center">
+              <button
+              className="bg-gray-600 text-white py-2 px-4 mr-10 rounded hover:bg-gray-700"
+              onClick={() => window.open(shortUrl, "_blank")}
+            >
+              Click to Visit
+            </button>
+              <button
+              type="button"
+              onClick={handleCopy}
+              className="bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700"
+            >
+              Copy Short URL
+            </button>
+            </div>
+            
+            <button
+              type="button"
+              onClick={handleReset}
+              className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700"
+            >
+              Shorten Another
+            </button>
+          
+          </>
+
+        )}
+      </form>
+    </main>
   );
 }

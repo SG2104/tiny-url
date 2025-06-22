@@ -2,17 +2,22 @@ import express, { Request, Response } from "express";
 import { connectToDB } from "./libs/db";
 import urlRouter from "./modules/urls/route";
 import { redisClient } from "./libs/redis";
+import { PORT } from "./libs/config";
+import cors from "cors";cors
 
 const app = express();
-const port = 3000;
+const port = PORT || 3000;;
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello, World!");
 });
 
+app.use(cors({
+  origin: "http://localhost:3000",
+  credentials: true,
+}));
 app.use(express.json());
 app.use(urlRouter);
-
 
 connectToDB();
 redisClient

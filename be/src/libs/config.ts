@@ -9,4 +9,5 @@ export const {
   DB_PASSWORD,
   DB_DATABASE,
   FRONTEND_URL,
+  PORT = "3000"
 } = process.env;

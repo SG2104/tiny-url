@@ -25,6 +25,8 @@ export const redirectTinyUrl = async (req: Request, res: Response) => {
     );
     if (response.rows.length === 0) {
       res.status(404).json({ error: "URL not found" });
+      //added 
+      return;
     }
     // Cache the original URL in Redis
     await redisClient.setRedisValue(`tinyurl:${id}`, response.rows[0].url, {
@@ -34,7 +36,9 @@ export const redirectTinyUrl = async (req: Request, res: Response) => {
     const originalUrl = response.rows[0].url;
 
     // Redirect to the original URL
-    res.redirect(originalUrl);
+    // res.redirect(originalUrl);
+
+    res.status(200).json({ url: originalUrl });
   } catch (error) {
     console.error("Error redirecting to tiny URL:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -71,9 +75,6 @@ export const createTinyUrl = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
-
-
-
 export const createMillionFakeUrls = async (req: Request, res: Response) => {
   console.log("createMillionFakeUrls controller executing...");
   console.log(req.method, req.url);
