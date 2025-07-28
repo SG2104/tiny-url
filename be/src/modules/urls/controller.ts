@@ -1,7 +1,43 @@
 import { Request, Response } from "express";
+import { createHash } from "crypto";
 import db from "../../libs/db";
 import { FRONTEND_URL } from "../../libs/config";
 import { redisClient } from "../../libs/redis";
+
+const BASE62_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+
+const toBase62 = (hash: string): string => {
+  // first 12 characters of MD5 hash for better distribution
+  const hashPart = hash.substring(0, 12);
+  const num = parseInt(hashPart, 16);
+  
+  let result = '';
+  let temp = num;
+  
+  for (let i = 0; i < 6; i++) {
+    result = BASE62_CHARS[temp % 62] + result;
+    temp = Math.floor(temp / 62);
+  }
+  return result;
+};
+
+const generateHashCode = (originalUrl: string): string => {
+  const hash = createHash('sha256');
+  
+  const timestamp = Date.now();
+  const processId = process.pid;
+  const randomComponent = Math.random().toString(36).substring(2, 8);
+  const salt = `${timestamp}${processId}${randomComponent}`;
+
+  // Hash the URL + salt
+  const dataToHash = `${originalUrl}${salt}`;
+  hash.update(dataToHash);
+  const sha256Hash = hash.digest('hex');
+
+  return toBase62(sha256Hash);
+};
+
+
 
 export const redirectTinyUrl = async (req: Request, res: Response) => {
   console.log(req.params.id);
@@ -50,7 +86,7 @@ export const createTinyUrl = async (req: Request, res: Response) => {
     const originalUrl = req.body.originalUrl;
     const expire_at_default = new Date();
     expire_at_default.setDate(expire_at_default.getDate() + 1);
-    const expire_at = req.body.expire_at || expire_at_default; // Default to 1 day from now if not provided
+    const expire_at = req.body.expire_at || expire_at_default;
 
     if (!originalUrl) {
       res.status(400).json({ error: "Original URL is required" });
@@ -62,7 +98,7 @@ export const createTinyUrl = async (req: Request, res: Response) => {
       res.status(400).json({ error: "Invalid URL format" });
     }
 
-    const code = Math.random().toString(36).substring(2, 8);
+    const code = generateHashCode(originalUrl);
     const shortUrl = `${FRONTEND_URL}/${code}`;
 
     const response = await db.query(
@@ -75,6 +111,8 @@ export const createTinyUrl = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+
 export const createMillionFakeUrls = async (req: Request, res: Response) => {
   console.log("createMillionFakeUrls controller executing...");
   console.log(req.method, req.url);
@@ -82,11 +120,11 @@ export const createMillionFakeUrls = async (req: Request, res: Response) => {
     const originalUrl = "https://example.com";
     const expire_at_default = new Date();
     expire_at_default.setDate(expire_at_default.getDate() + 1);
-    const expire_at = expire_at_default; // Default to 1 day from now
+    const expire_at = expire_at_default;
 
     const promises = [];
     for (let i = 0; i < 10000; i++) {
-      const code = Math.random().toString(36).substring(2, 8);
+      const code = generateHashCode(originalUrl);
       promises.push(
         db.query(
           "INSERT INTO urls (url, code, expires_at) VALUES ($1, $2, $3)",
