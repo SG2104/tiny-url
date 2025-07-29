@@ -29,12 +29,16 @@ export default function HomePage() {
 
   const onSubmit = async (data: FormData) => {
     try {
+      const expire_at = data.expire_at
+      ? new Date(data.expire_at).toISOString()
+      : undefined;
+
       const response = await fetch("http://localhost:8000/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           originalUrl: data.originalUrl,
-          expire_at: data.expire_at || undefined,
+          expire_at,
         }),
       });
 

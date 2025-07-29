@@ -3,7 +3,7 @@ import { connectToDB } from "./libs/db";
 import urlRouter from "./modules/urls/route";
 import { redisClient } from "./libs/redis";
 import { PORT } from "./libs/config";
-import cors from "cors";cors
+import cors from "cors";
 
 const app = express();
 const port = PORT || 3000;;
