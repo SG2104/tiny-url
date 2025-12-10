@@ -1,14 +1,9 @@
 import { Client } from "pg";
-import { DB_DATABASE, DB_HOST, DB_PASSWORD, DB_PORT, DB_USER } from "./config";
+import { DB_CONFIG } from "./appConfig";
 import { Pool } from "pg";
 
-const client = new Client({
-  host: DB_HOST,
-  port: Number(DB_PORT),
-  user: DB_USER,
-  password: DB_PASSWORD,
-  database: DB_DATABASE,
-});
+const client = new Client(DB_CONFIG);
+
 export const connectToDB = async () => {
   try {
     // Connect to the PostgreSQL database
@@ -21,13 +16,6 @@ export const connectToDB = async () => {
   }
 };
 
-
-const db = new Pool({
-  host: DB_HOST,
-  port: Number(DB_PORT),
-  user: DB_USER,
-  password: DB_PASSWORD,
-  database: DB_DATABASE,
-});
+const db = new Pool(DB_CONFIG);
 
 export default db;

@@ -6,7 +6,6 @@ export const createUrlSchema = z.object({
     .url({ message: "Invalid URL format" }),
   expire_at: z
     .string()
-    .datetime({ message: "Invalid ISO date format. Use YYYY-MM-DDTHH:mm:ssZ" })
     .optional(),
 });
 

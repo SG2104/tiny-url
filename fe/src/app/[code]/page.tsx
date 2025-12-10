@@ -1,7 +1,7 @@
 "use client";
-import axios from "axios";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { urlService } from "../../lib/api";
 
 export default function RedirectPage() {
   const params = useParams();
@@ -9,24 +9,24 @@ export default function RedirectPage() {
   const code = params?.code as string;
 
   useEffect(() => {
-  const fetchRedirect = async () => {
-    if (!code) return;
+    const fetchRedirect = async () => {
+      if (!code) return;
 
-    try {
-      const res = await axios.get(`http://localhost:8000/redirect/${code}`);
-      if (res.status === 200 && res.data.url) {
-        window.location.href = res.data.url;
-      } else {
+      try {
+        const result = await urlService.getRedirectUrl(code);
+        if (result.url) {
+          window.location.href = result.url;
+        } else {
+          router.replace("/not-found");
+        }
+      } catch (err) {
+        console.error("Redirect error:", err);
         router.replace("/not-found");
       }
-    } catch (err) {
-      console.error("Redirect error:", err);
-      router.replace("/not-found");
-    }
-  };
+    };
 
-  fetchRedirect();
-}, [code]);
+    fetchRedirect();
+  }, [code, router]);
 
   return <p>Loading...</p>;
 }
