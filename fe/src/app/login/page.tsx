@@ -6,8 +6,11 @@ import { Input } from "../components/Input";
 import { Card } from "../components/Card";
 import Link from "next/link";
 import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+    const router = useRouter();
+
     const {
         register,
         handleSubmit,
@@ -15,10 +18,38 @@ export default function LoginPage() {
     } = useForm();
 
     const onSubmit = async (data: any) => {
-        // Placeholder for actual login logic
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        console.log("Login data:", data);
-        toast.success("Logged in successfully! (Demo)");
+        try {
+            const res = await fetch("http://localhost:8000/api/auth/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify(data),
+            });
+
+            let json: any = null;
+            try {
+                json = await res.json();
+            } catch {
+                json = null;
+            }
+
+            console.log("Login response:", res.status, json);
+
+            if (!res.ok) {
+                toast.error(json?.message || "Login failed");
+                return;
+            }
+
+            toast.success("Logged in successfully!");
+
+            // Redirect to home / dashboard
+            router.push("/");
+        } catch (err) {
+            console.error("Login error:", err);
+            toast.error("Something went wrong. Please try again.");
+        }
     };
 
     return (
@@ -50,7 +81,9 @@ export default function LoginPage() {
                                 error={errors.password?.message as string}
                             />
                             <div className="flex justify-end">
-                                <a href="#" className="text-xs text-indigo-600 hover:underline">Forgot password?</a>
+                                <a href="#" className="text-xs text-indigo-600 hover:underline">
+                                    Forgot password?
+                                </a>
                             </div>
                         </div>
 

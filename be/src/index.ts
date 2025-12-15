@@ -5,6 +5,9 @@ import { redisClient } from "./libs/redis";
 import { SERVER_CONFIG } from "./libs/appConfig";
 import cors from "cors";
 
+import cookieParser from "cookie-parser";
+import router from "./modules/auth/route";
+
 const app = express();
 const port = SERVER_CONFIG.port;
 
@@ -16,7 +19,9 @@ app.use(cors({
     origin: SERVER_CONFIG.frontendUrl,
     credentials: true,
 }));
+app.use(cookieParser());
 app.use(express.json());
+app.use("/api/auth", router);
 app.use(urlRouter);
 
 connectToDB();

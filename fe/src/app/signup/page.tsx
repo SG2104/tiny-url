@@ -6,8 +6,11 @@ import { Input } from "../components/Input";
 import { Card } from "../components/Card";
 import Link from "next/link";
 import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
 
 export default function SignupPage() {
+    const router = useRouter();
+
     const {
         register,
         handleSubmit,
@@ -15,10 +18,49 @@ export default function SignupPage() {
     } = useForm();
 
     const onSubmit = async (data: any) => {
-        // Placeholder for actual signup logic
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        console.log("Signup data:", data);
-        toast.success("Account created successfully! (Demo)");
+        try {
+            const res = await fetch("http://localhost:8000/api/auth/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: "include", // IMPORTANT: so cookie is stored
+                body: JSON.stringify(data),
+            });
+
+            // Try to parse JSON, but don't crash if empty
+            let json: any = null;
+            try {
+                json = await res.json();
+            } catch {
+                json = null;
+            }
+
+            // Helpful for debugging
+            console.log("Signup response:", res.status, json);
+
+            if (res.status === 409) {
+                toast.error("Email already in use. Try logging in instead.");
+                return;
+            }
+
+            if (!res.ok) {
+                toast.error(json?.message || "Signup failed");
+                return;
+            }
+
+            toast.success("Account created successfully!");
+
+            // 🔁 Redirect after success (choose what you want)
+            // Option A: Go to login page
+            router.push("/login");
+
+            // Option B (later): Go to homepage or dashboard
+            // router.push("/");
+        } catch (err) {
+            console.error("Signup error:", err);
+            toast.error("Something went wrong. Please try again.");
+        }
     };
 
     return (
@@ -52,7 +94,10 @@ export default function SignupPage() {
                             label="Password"
                             type="password"
                             placeholder="Create a password"
-                            {...register("password", { required: "Password is required", minLength: { value: 6, message: "Min 6 chars" } })}
+                            {...register("password", {
+                                required: "Password is required",
+                                minLength: { value: 6, message: "Min 6 chars" },
+                            })}
                             error={errors.password?.message as string}
                         />
 
