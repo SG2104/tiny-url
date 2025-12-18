@@ -9,6 +9,8 @@ import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/context/AuthContext";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { loginSchema, LoginFormData } from "@/lib/authSchema";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -18,9 +20,12 @@ export default function LoginPage() {
         register,
         handleSubmit,
         formState: { errors, isSubmitting },
-    } = useForm();
+    } = useForm<LoginFormData>({
+        resolver: zodResolver(loginSchema),
+        mode: "onBlur",
+    });
 
-    const onSubmit = async (data: any) => {
+    const onSubmit = async (data: LoginFormData) => {
         try {
             const res = await fetch("http://localhost:8000/api/auth/login", {
                 method: "POST",
@@ -71,7 +76,7 @@ export default function LoginPage() {
                         <p className="text-slate-500 mt-2">Sign in to your account</p>
                     </div>
 
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
                         <Input
                             label="Email Address"
                             type="email"

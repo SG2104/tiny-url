@@ -9,6 +9,8 @@ import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/context/AuthContext";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { signupSchema, SignupFormData } from "@/lib/authSchema";
 
 export default function SignupPage() {
     const router = useRouter();
@@ -18,9 +20,12 @@ export default function SignupPage() {
         register,
         handleSubmit,
         formState: { errors, isSubmitting },
-    } = useForm();
+    } = useForm<SignupFormData>({
+        resolver: zodResolver(signupSchema),
+        mode: "onBlur",
+    });
 
-    const onSubmit = async (data: any) => {
+    const onSubmit = async (data: SignupFormData) => {
         try {
             const res = await fetch("http://localhost:8000/api/auth/register", {
                 method: "POST",
@@ -78,7 +83,7 @@ export default function SignupPage() {
                         <p className="text-slate-500 mt-2">Start shortening links today</p>
                     </div>
 
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
                         <Input
                             label="Full Name"
                             placeholder="John Doe"
