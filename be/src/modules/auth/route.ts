@@ -101,14 +101,14 @@ router.post(
             });
 
             if (!user) {
-                res.status(401).json({ message: "Invalid credentials" });
+                res.status(404).json({ message: "No account found with this email" });
                 return;
             }
 
             const isValid = await bcrypt.compare(password, user.password);
 
             if (!isValid) {
-                res.status(401).json({ message: "Invalid credentials" });
+                res.status(401).json({ message: "Incorrect password" });
                 return;
             }
 
