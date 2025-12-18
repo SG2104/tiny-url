@@ -8,8 +8,11 @@ import Link from "next/link";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 
+import { useAuth } from "@/context/AuthContext";
+
 export default function LoginPage() {
     const router = useRouter();
+    const { login } = useAuth();
 
     const {
         register,
@@ -43,6 +46,11 @@ export default function LoginPage() {
             }
 
             toast.success("Logged in successfully!");
+
+            // Update auth context
+            if (json.user) {
+                login(json.user);
+            }
 
             // Redirect to home / dashboard
             router.push("/");

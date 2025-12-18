@@ -8,8 +8,11 @@ import Link from "next/link";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 
+import { useAuth } from "@/context/AuthContext";
+
 export default function SignupPage() {
     const router = useRouter();
+    const { login } = useAuth();
 
     const {
         register,
@@ -51,12 +54,13 @@ export default function SignupPage() {
 
             toast.success("Account created successfully!");
 
-            // 🔁 Redirect after success (choose what you want)
-            // Option A: Go to login page
-            router.push("/login");
+            // Update auth context
+            if (json.user) {
+                login(json.user);
+            }
 
-            // Option B (later): Go to homepage or dashboard
-            // router.push("/");
+            // Redirect to home
+            router.push("/");
         } catch (err) {
             console.error("Signup error:", err);
             toast.error("Something went wrong. Please try again.");

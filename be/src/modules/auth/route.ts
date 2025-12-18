@@ -145,4 +145,30 @@ router.post(
     }
 );
 
+// GET /api/auth/me
+router.get("/me", async (req: Request, res: Response): Promise<void> => {
+    try {
+        const token = req.cookies.token;
+        if (!token) {
+            res.status(401).json({ message: "Not authenticated" });
+            return;
+        }
+
+        const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
+        const user = await prisma.user.findUnique({
+            where: { id: decoded.userId },
+            select: { id: true, name: true, email: true },
+        });
+
+        if (!user) {
+            res.status(401).json({ message: "User not found" });
+            return;
+        }
+
+        res.json({ user });
+    } catch (err) {
+        res.status(401).json({ message: "Invalid token" });
+    }
+});
+
 export default router;
