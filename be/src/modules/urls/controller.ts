@@ -3,6 +3,10 @@ import { createHash } from "crypto";
 import db from "../../libs/db";
 import { SERVER_CONFIG } from "../../libs/appConfig";
 import { redisClient } from "../../libs/redis";
+import { AuthRequest } from "../../middlewares/auth.middleware";
+import jwt from "jsonwebtoken";
+
+const JWT_SECRET = process.env.JWT_SECRET as string;
 
 const BASE62_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
@@ -155,6 +159,17 @@ export const createTinyUrl = async (req: Request, res: Response) => {
     }
 
 
+    let userId: number | null = null;
+    const token = req.cookies.token;
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
+        userId = decoded.userId;
+      } catch (e) {
+        // Ignore invalid token for creation (treat as guest)
+      }
+    }
+
     if (!originalUrl) {
       res.status(400).json({ error: "Original URL is required" });
       return;
@@ -175,8 +190,8 @@ export const createTinyUrl = async (req: Request, res: Response) => {
     for (let attempts = 0; attempts < 5; attempts++) {
       try {
         response = await db.query(
-          "INSERT INTO urls (url, code, expires_at) VALUES ($1, $2, $3::timestamp with time zone) RETURNING *",
-          [originalUrl, code, expire_at]
+          "INSERT INTO urls (url, code, expires_at, user_id) VALUES ($1, $2, $3::timestamp with time zone, $4) RETURNING *",
+          [originalUrl, code, expire_at, userId]
         );
         break; // Success, exit loop
       } catch (error: any) {
@@ -229,13 +244,18 @@ export const createMillionFakeUrls = async (req: Request, res: Response) => {
   }
 };
 
-export const getAllUrls = async (req: Request, res: Response) => {
+export const getAllUrls = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    if (!req.user) {
+      res.status(401).json({ error: "Unauthorized" });
+      return;
+    }
+    const userId = req.user.id;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 50;
     const offset = (page - 1) * limit;
 
-    const countResult = await db.query("SELECT COUNT(*) FROM urls WHERE deleted_at IS NULL");
+    const countResult = await db.query("SELECT COUNT(*) FROM urls WHERE deleted_at IS NULL AND user_id = $1", [userId]);
     const total = parseInt(countResult.rows[0].count);
 
     const result = await db.query(
@@ -247,9 +267,10 @@ export const getAllUrls = async (req: Request, res: Response) => {
         expires_at::timestamptz 
        FROM urls 
        WHERE deleted_at IS NULL 
+         AND user_id = $3
        ORDER BY created_at DESC 
        LIMIT $1 OFFSET $2`,
-      [limit, offset]
+      [limit, offset, userId]
     );
 
     res.status(200).json({

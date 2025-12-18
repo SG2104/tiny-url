@@ -13,6 +13,7 @@ import Link from "next/link";
 import { Button } from "./components/Button";
 import { Input } from "./components/Input";
 import { Card } from "./components/Card";
+import { useAuth } from "@/context/AuthContext";
 
 type FormData = z.infer<typeof formSchema>;
 
@@ -20,6 +21,7 @@ export default function HomePage() {
   const [shortUrl, setShortUrl] = useState("");
   const [longUrl, setLongUrl] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const { user } = useAuth();
 
   const {
     register,
@@ -226,16 +228,18 @@ export default function HomePage() {
         </div>
 
         {/* Recent Links Call to Action */}
-        <section className="w-full max-w-lg mx-auto text-center animate-fade-in animate-delay-200">
-          <h2 className="text-2xl font-bold mb-4 text-slate-800 dark:text-white">
-            Review Your History
-          </h2>
-          <Link href="/dashboard">
-            <Button variant="secondary" size="lg" className="shadow-lg shadow-gray-200/50 dark:shadow-none w-full sm:w-auto">
-              View Your Recent Links &rarr;
-            </Button>
-          </Link>
-        </section>
+        {user && (
+          <section className="w-full max-w-lg mx-auto text-center animate-fade-in animate-delay-200">
+            <h2 className="text-2xl font-bold mb-4 text-slate-800 dark:text-white">
+              Review Your History
+            </h2>
+            <Link href="/dashboard">
+              <Button variant="secondary" size="lg" className="shadow-lg shadow-gray-200/50 dark:shadow-none w-full sm:w-auto">
+                View Your Recent Links &rarr;
+              </Button>
+            </Link>
+          </section>
+        )}
 
       </div>
     </main>
